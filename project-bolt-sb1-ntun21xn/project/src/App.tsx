@@ -197,6 +197,9 @@ function SidebarContent({
           <p className="text-xs text-slate-400 leading-relaxed">
             Forecast spending, detect anomalies, and get personalized budget recommendations.
           </p>
+          <p className="mt-3 text-[11px] font-medium text-slate-500">
+            Built by Chandana Lakshmi
+          </p>
         </div>
       </div>
     </>
