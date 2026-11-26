@@ -1,26 +1,21 @@
 # SpendWise AI
 
-SpendWise AI is a React and Supabase expense tracker with AI-style expense insights.
+SpendWise AI is separated into two folders:
 
-## Web application
+- `frontend/` — React, Vite, Supabase UI and client-side expense views
+- `backend/` — Python ML implementation using TF-IDF, Logistic Regression, Random Forest, MAE, CSV processing, and budget alerts
+
+## Frontend
 
 ```powershell
+cd frontend
 npm install
 npm run dev
 ```
 
 Use `npm run build` for a production build.
 
-## Python analytics (`spendwise.py`)
-
-The Python implementation provides:
-
-- TF-IDF and Logistic Regression for description-based category classification
-- Random Forest regression for 7-day and 30-day forecasts
-- Daily totals, Mean Absolute Error (MAE), and budget alerts
-- Automatic `expenses.csv` demo data generation
-
-Install and run:
+## Backend
 
 ```powershell
 cd backend
