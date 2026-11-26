@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import {
-  Plus, Search, Trash2, Pencil, X, Filter, Receipt, AlertCircle,
+  Plus, Search, Trash2, Pencil, X, Filter, Receipt, AlertCircle, Download, Sparkles,
 } from 'lucide-react';
 import { supabase, CATEGORIES, CATEGORY_COLORS, type Expense, type ExpenseInsert } from '@/lib/supabase';
 import { formatINR, formatDate, monthKey, currentMonthKey, detectAnomaliesForMonth } from '@/lib/analytics';
@@ -11,6 +11,24 @@ type Props = {
 };
 
 type SortKey = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc';
+
+function suggestCategory(description: string): string {
+  const text = description.toLowerCase();
+  const rules: Record<string, string[]> = {
+    Food: ['lunch', 'dinner', 'breakfast', 'cafe', 'restaurant', 'groceries', 'coffee', 'food'],
+    Transport: ['uber', 'ola', 'taxi', 'bus', 'train', 'metro', 'fuel', 'petrol'],
+    Shopping: ['amazon', 'flipkart', 'clothes', 'shoes', 'shopping', 'mobile', 'electronics'],
+    'Bills & Utilities': ['electricity', 'water', 'internet', 'mobile bill', 'utility', 'bill'],
+    Entertainment: ['movie', 'cinema', 'netflix', 'game', 'concert'],
+    Health: ['hospital', 'medicine', 'pharmacy', 'doctor', 'health', 'gym'],
+    Education: ['course', 'book', 'tuition', 'college', 'school'],
+    Rent: ['house rent', 'apartment rent', 'rent payment'],
+  };
+  for (const [category, terms] of Object.entries(rules)) {
+    if (terms.some((term) => text.includes(term))) return category;
+  }
+  return 'Other';
+}
 
 export default function Expenses({ expenses, onChange }: Props) {
   const [showForm, setShowForm] = useState(false);
@@ -82,13 +100,31 @@ export default function Expenses({ expenses, onChange }: Props) {
             {filtered.length} transactions · Total {formatINR(totalFiltered)}
           </p>
         </div>
-        <button
-          onClick={startNew}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-400 text-slate-900 hover:bg-teal-300 text-sm font-semibold shadow-lg shadow-teal-400/20"
-        >
-          <Plus size={18} />
-          Add Expense
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const rows = [['date', 'description', 'category', 'amount'], ...expenses.map((e) => [e.date, e.description || '', e.category, e.amount])];
+              const csv = rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
+              const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'expenses.csv';
+              link.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white text-sm font-semibold"
+          >
+            <Download size={18} />
+            Export CSV
+          </button>
+          <button
+            onClick={startNew}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-400 text-slate-900 hover:bg-teal-300 text-sm font-semibold shadow-lg shadow-teal-400/20"
+          >
+            <Plus size={18} />
+            Add Expense
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -314,13 +350,24 @@ function ExpenseForm({
           </div>
           <div>
             <label className="text-xs text-slate-400 mb-1.5 block">Description (optional)</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Lunch at cafe, Uber ride..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-teal-400/50"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. Lunch at cafe, Uber ride..."
+                className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none focus:border-teal-400/50"
+              />
+              <button
+                type="button"
+                onClick={() => setCategory(suggestCategory(description) as typeof CATEGORIES[number])}
+                disabled={!description.trim()}
+                title="Suggest category from description"
+                className="px-3 rounded-xl border border-violet-400/30 bg-violet-400/10 text-violet-300 disabled:opacity-40"
+              >
+                <Sparkles size={16} />
+              </button>
+            </div>
           </div>
           <div>
             <label className="text-xs text-slate-400 mb-1.5 block">Date</label>

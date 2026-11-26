@@ -5,7 +5,7 @@ import {
 import type { Expense, Budget } from '@/lib/supabase';
 import {
   forecastMonthly, detectAnomalies, getMonthlySummaries, formatINR,
-  currentMonthKey, monthLabel, formatDate, recommendBudgets,
+  currentMonthKey, monthLabel, formatDate, recommendBudgets, forecastShortTerm,
 } from '@/lib/analytics';
 import { LineChart, ProgressBar } from '@/components/Charts';
 
@@ -20,6 +20,8 @@ export default function Insights({ expenses, budgets, onNavigate }: Props) {
   const anomalies = useMemo(() => detectAnomalies(expenses), [expenses]);
   const summaries = useMemo(() => getMonthlySummaries(expenses), [expenses]);
   const recs = useMemo(() => recommendBudgets(expenses, budgets), [expenses, budgets]);
+  const sevenDayForecast = useMemo(() => forecastShortTerm(expenses, 7), [expenses]);
+  const thirtyDayForecast = useMemo(() => forecastShortTerm(expenses, 30), [expenses]);
 
   const currentM = currentMonthKey();
   const monthAnomalies = anomalies.filter((a) => {
@@ -132,6 +134,25 @@ export default function Insights({ expenses, budgets, onNavigate }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* 7-day / 30-day forecasts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[sevenDayForecast, thirtyDayForecast].map((item) => (
+          <div key={item.horizon} className="glass-card rounded-2xl p-5 border border-violet-400/10">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-white">{item.horizon}-Day Spend Forecast</p>
+                <p className="text-xs text-slate-500 mt-1">Rolling feature forecast</p>
+              </div>
+              <Activity size={18} className="text-violet-300" />
+            </div>
+            <div className="text-3xl font-bold text-violet-300 font-display">{formatINR(item.predictedSpend)}</div>
+            <div className="mt-2 text-xs text-slate-400">
+              Approx. {formatINR(item.dailyAverage)} per day
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Anomaly Detection */}

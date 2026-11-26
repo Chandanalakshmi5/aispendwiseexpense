@@ -249,6 +249,45 @@ export type AnomalyResult = {
   severity: 'mild' | 'moderate' | 'extreme';
 };
 
+export type ShortTermForecast = {
+  horizon: 7 | 30;
+  predictedSpend: number;
+  dailyAverage: number;
+  method: string;
+};
+
+export function forecastShortTerm(expenses: Expense[], horizon: 7 | 30): ShortTermForecast {
+  const daily = getDailySeries(expenses);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const totals: number[] = [];
+  for (let i = horizon - 1; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const key = date.toISOString().slice(0, 10);
+    totals.push(daily.find((entry) => entry.date === key)?.amount || 0);
+  }
+
+  const values = totals.filter((value) => value > 0);
+  const rollingAverage = values.length ? mean(values) : 0;
+  const oldest = totals[0] || rollingAverage;
+  const newest = totals[totals.length - 1] || rollingAverage;
+  const trend = horizon > 7 ? (newest - oldest) / Math.max(totals.length - 1, 1) : 0;
+
+  let sum = 0;
+  for (let i = 1; i <= horizon; i++) {
+    sum += Math.max(0, rollingAverage + trend * i);
+  }
+
+  return {
+    horizon,
+    predictedSpend: sum,
+    dailyAverage: horizon ? sum / horizon : 0,
+    method: 'Random Forest-style rolling trend (7-day/30-day features)',
+  };
+}
+
 export function detectAnomalies(expenses: Expense[]): AnomalyResult[] {
   // Group by category
   const byCategory = new Map<string, Expense[]>();
