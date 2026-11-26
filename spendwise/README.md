@@ -23,6 +23,7 @@ The Python implementation provides:
 Install and run:
 
 ```powershell
+cd backend
 python -m pip install -r requirements.txt
 python spendwise.py
 ```
